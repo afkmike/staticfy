@@ -143,7 +143,7 @@ def url_conf(contents):
             NEW_LINK = 'url \"' + URL + '\" %'
             new_contents = contents[:(ATTRIBUTE_INDEX+OFFSET_1)] + NEW_LINK + contents[bracket_index:]
             contents = new_contents
-    process_py.get_urls(url_list)
+    process_py.process_py(url_list)
     return contents
 
 def default_blocks(contents):

@@ -15,12 +15,12 @@ log = log_manager.log_manager("logs/process_to_django_log.txt")
 
 def check_view(contents, url_name):
     """
-    This function checks to see if the url_name is already in django views.py
+    This function checks to see if the (url_name) is already in django views.py
     If it is, it will return an untouched version of contents.
-    Otherwise it will call append_view() and return an updated version of contents
+    Otherwise it will call (append_view()) and return an updated version of (contents)
     :param contents: This is the contents of the views.py file in readlines() format (array)
     :param url_name: This is the url name of the fixed url, no extension
-    :return: Current, or appended contents. Returns to process()
+    :return: Current, or appended (contents). Returns to (process())
     """
     url = "'%s/%s%s'" % (DJANGO_APP_NAME, url_name, SITE_EXT)
     log.log.info('Checking for %s in views...' % url)
@@ -54,12 +54,12 @@ def append_view(contents, url_name):
 
 def check_urls(contents, url_name):
     """
-    This function checks to see if the url_name is already in django urls.py
-    If it is, it will return an untouched version of contents.
-    Otherwise it will call append_view() and return an updated version of contents
+    This function checks to see if the (url_name) is already in django urls.py
+    If it is, it will return an untouched version of (contents).
+    Otherwise it will call append_view() and return an updated version of (contents)
     :param contents: This is the contents of the urls.py file in readlines() format (array)
     :param url_name: This is the url name of the fixed url, no extension
-    :return: Current, or appended contents. Returns to process()
+    :return: Current, or appended (contents). Returns to (process())
     """
     url = '%s%s' % (url_name, SITE_EXT)
     log.log.info('Checking for %s in urls...' % url)
@@ -74,9 +74,9 @@ def check_urls(contents, url_name):
 def append_urls(contents, url_name):
     """
     This function builds a function for the new url in urls.py
-    :param contents: The contents of urls.py in readlines() format (Array)
+    :param contents: The (contents) of urls.py in readlines() format (Array)
     :param url_name: This is the url name of the fixed url, no extension
-    :return: Returns the appended contents to check_url()
+    :return: Returns the appended (contents) to (check_url())
     """
     temp = '\n'
     temp += 'urlpatterns.append('
@@ -111,7 +111,7 @@ def process_py(urls, ext='.htm'):  # Externally called function, only call this 
     This is the only external function of this file.
     requires a list of urls to process
     :param urls: a list of urls to process
-    :param ext: OPTIONAL default argument for site file type, sets global SITE_EXT
+    :param ext: OPTIONAL default argument for site file type, sets global (SITE_EXT)
     :return: Nothing
     """
     log.log.info("Processing Django Files...")
@@ -127,4 +127,4 @@ if __name__ == '__main__':
     _urls = [
         'test'
     ]
-    get_urls(_urls)
+    process_py(_urls)

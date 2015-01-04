@@ -24,12 +24,12 @@ def build_traceback(error_trace):
 
 def get_contents(filename, lines=False, full_dir=False):
     """
-    Reads the contents of filename and returns either an array (lines=True) of lines,
-    or returns a string (lines=False). full_dir is used in later functions.
+    Reads the contents of filename and returns either an array (lines=True) of (lines),
+    or returns a string (lines=False). (full_dir) is used in later functions.
     :param filename: Name/Directory of the file to be read and returned
     :param lines: Read the file with readlines()
     :param full_dir: Passed on to other functions, does nothing here.
-    :return: The contents of filename, contents.
+    :return: The (contents) of (filename).
     """
     log.log.info("Getting %s now..." % filename)
     try:
@@ -61,12 +61,12 @@ def get_contents(filename, lines=False, full_dir=False):
 
 def make_backup(contents, filename, lines=False, full_dir=False):
     """
-    Makes a back up of contents, with the name copyOf(filename)
-    If the directory is full, strip out everything but the filename for copy_filename
+    Makes a back up of (contents), with the name (copyOf(filename))
+    If the directory is full, strip out everything but the (filename) for (copy_filename)
     :param contents: Contents to back up, can be a string or array
     :param filename: The file name to back up, can be full dir, or relative
     :param lines: If the content file is from readlines()
-    :param full_dir: If the filename has a full dir, or is realtive
+    :param full_dir: If the filename has a full dir, or is relative
     :return: Nothing.
     """
     # to get just the name from a full directory name
@@ -75,7 +75,6 @@ def make_backup(contents, filename, lines=False, full_dir=False):
         copy_filename = "copyOf" + f[len(f)-1]
     else:
         copy_filename = "copyOf" + filename
-    log.log.info("%s %s" % (full_dir, copy_filename))
     if not lines:
         if make_new_file(contents, copy_filename, backup=True, lines=lines, full_dir=full_dir):
             log.log.info("Made backup copy of " + filename + " named " + copy_filename)
@@ -90,14 +89,14 @@ def make_backup(contents, filename, lines=False, full_dir=False):
 
 def make_new_file(contents, filename, backup=False, lines=False, full_dir=False):
     """
-    Writes (contents) to (filename). If its a (backup) and fails, will wait for user input before continuing
-    
+    Writes (contents) to (filename). If its a (backup=True) and fails, will wait for user input before continuing
+
     :param contents: The contents to be written to file, can be in readlines() format
     :param filename: The name of the file to write to, can be full dir or relative
     :param backup: Is this a backup file write?
     :param lines: If the format of content is readlines()
     :param full_dir: Does nothing at the moment.
-    :return:
+    :return True if successful:
     """
     try:
         if not lines:
