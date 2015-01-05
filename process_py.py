@@ -1,4 +1,4 @@
-__author__ = 'Mark'
+__author__ = 'mark@afkconcepts.com'
 import sys
 import os
 import log_manager

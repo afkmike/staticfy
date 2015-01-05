@@ -1,4 +1,4 @@
-__author__ = 'Mark'
+__author__ = 'mark@afkconcepts.com'
 import traceback
 import log_manager
 import string
@@ -75,16 +75,11 @@ def make_backup(contents, filename, lines=False, full_dir=False):
         copy_filename = "copyOf" + f[len(f)-1]
     else:
         copy_filename = "copyOf" + filename
-    if not lines:
-        if make_new_file(contents, copy_filename, backup=True, lines=lines, full_dir=full_dir):
-            log.log.info("Made backup copy of " + filename + " named " + copy_filename)
-        else:
-            log.log.error("Backup of " + filename + " has failed.")
+    if make_new_file(contents, copy_filename, backup=True, lines=lines, full_dir=full_dir):
+        log.log.info("Made backup copy of " + filename + " named " + copy_filename)
     else:
-        if make_new_file(contents, copy_filename, backup=True, lines=lines, full_dir=full_dir):
-            log.log.info("Made backup copy of " + filename + " named " + copy_filename)
-        else:
-            log.log.error("Backup of " + filename + " has failed.")
+        log.log.error("Backup of " + filename + " has failed.")
+
 
 
 def make_new_file(contents, filename, backup=False, lines=False, full_dir=False):

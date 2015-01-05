@@ -1,3 +1,4 @@
+__author__ = 'mark@afkconcepts.com'
 import logging
 
 LEVELS = { 'DEBUG': logging.DEBUG,
