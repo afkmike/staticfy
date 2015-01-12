@@ -1,8 +1,8 @@
+__author__ = 'mike@afkconcepts.com'
 """
-STATICFY is a django integration script for new html files
-Owned by afkconcepts
-author : mike
+process_html is a django integration script for new html files
 """
+
 import sys
 import os
 import log_manager
@@ -11,13 +11,13 @@ import process_py
 
 log = log_manager.log_manager("logs/staticfy_log.txt")
 
-def extend_base(contents):
+def extend_base(contents, template='base.html'):
     """######################################################################################
     # check for {% extends "base.html" %} tag then inserts after doctype                    #
     # ###USAGE: this function can be "independently" called by process or any flow control  #
     #           will apply only to non-template files                                       #
     ######################################################################################"""
-    EXTENDS_BASE_TAG = '{% extends \"base.html\" %}'
+    EXTENDS_BASE_TAG = '{% extends \"' + template + '\" %}'
     EXTENDS_BASE_INDEX = contents.find(EXTENDS_BASE_TAG)
     if EXTENDS_BASE_INDEX == -1:
         log.log.info("Extends base.html tag was inserted")
@@ -52,7 +52,7 @@ def load_staticfiles(contents):
             new_contents = contents[:AFTER_DOCTYPE] + "\n" + LOAD_SF_TAG + "\n" + contents[AFTER_DOCTYPE:]
         return new_contents
 
-def staticfy_resource(contents, res_type):
+def staticfy_resource(contents, res_type):  # TODO ignore <a>
     """######################################################################################
     #  designed to link all resources to the staticfiles dir                                #
     #  calls load_staticfiles() to ensure the files are loaded before trying to link        #
@@ -116,7 +116,7 @@ def staticfy_preload(contents):
         log.log.info("A script preload list has been STATICFIED!")
     return contents
 
-def url_conf(contents):
+def url_conf(contents):  # TODO make this independent from staticfy
     """######################################################################################
     # designed to match all hyperlinks to their django url configuration                    #
     # ###USAGE: this function can be "independently" called by process() or any flow control#
@@ -153,8 +153,6 @@ def default_blocks(contents):
     #  could probably generalize to make less redundant, but must remain scalable           #
     # ###USAGE: called during process() when in child page mode                             #
     ######################################################################################"""
-    contents = extend_base(contents)
-
     HEAD_BLOCK_OPEN = '{% block head_block %}'
     BODY_BLOCK_OPEN = '{% block body_content %}'
     BLOCK_CLOSE = '{% endblock %}'
@@ -229,6 +227,7 @@ def remove_relative_path(contents):
             contents = new_contents
     return contents
 
+''' original version
 def process(a_file, mode):
     """######################################################################################
     # single call helper function encapsulates flow control by file type                    #
@@ -250,6 +249,35 @@ def process(a_file, mode):
         contents = url_conf(contents)
         file_io.make_new_file(contents, a_file)
     return
+'''
+def process(funct_dic):
+    ''' funct_dic key
+    #  'path': 0,                 # file path to modify or 0(None) - expect: u'c:\\dir\file'  getting: C
+    #  'extends': 0,              # name of base template          - expect: u'base.html'
+    #  'static': 0,               # t/f
+    #  'remove_html_tags': 0,     # t/f
+    #  'url_conf': 0,             # t/f
+    #  'disable_rel_path': 0,     # t/f
+    #  'default_blocks': 0        # t/f
+    '''
+    fileslist = file_io.file_or_dir(funct_dic['path'])
+    for a_file in fileslist:
+        contents = file_io.get_contents(a_file)
+        if funct_dic['extends']:
+            contents = extend_base(contents, funct_dic['extends'])
+        if funct_dic['default_blocks']:
+            contents = default_blocks(contents)
+        if funct_dic['remove_html_tags']:
+            contents = remove_html_tags(contents)
+        if funct_dic['disable_rel_path']:
+            contents = remove_relative_path(contents)
+        if funct_dic['static']:
+            contents = staticfy_resource(contents, "src=")
+            contents = staticfy_resource(contents, "href=")
+        if funct_dic['url_conf']:
+            contents = url_conf(contents)
+        file_io.make_new_file(contents, a_file)
+    return fileslist
 
 if __name__ == "__main__":
     if len(sys.argv) < 1:               # check for command line args first

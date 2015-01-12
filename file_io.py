@@ -2,6 +2,8 @@ __author__ = 'mark@afkconcepts.com'
 import traceback
 import log_manager
 import string
+from os import walk
+import os.path
 
 
 log = log_manager.log_manager("logs/file_io_log.txt")
@@ -116,3 +118,24 @@ def make_new_file(contents, filename, backup=False, lines=False, full_dir=False)
             input('Writing to file ' + filename + 'failed, press any key to continue.')
             log.log.error('Writing to file ' + filename + ' failed.')
         return False
+
+
+def file_or_dir(path):
+    """
+    :param path: user entered path
+    :return: (list)filename provided as path OR all files in dir provided as path
+    """
+    f = []
+    if os.path.isdir(path):
+        for (dirpath, dirnames, filenames) in walk(path):  # dirpath == path, dirnames = folders inside path
+            f.extend(filenames)
+            print "file found in folder: ".join(map(str, filenames))  # this could be changed to a log entry
+            break
+    elif os.path.isfile(path):
+        f.append(path)
+        print "single file path: ".join(map(str, path))  # this could be changed to a log entry
+    else:
+        # TODO show 'you didn't enter a file to modify, moron' dialog and kill the process
+        # this is actually a secondary check, it should already be done once in gui.py
+        pass
+    return f
