@@ -28,7 +28,7 @@ def extend_base(contents, template='base.html'):
         log.log.info("Extends tag found prior to insert. Process aborted.")
         return contents
 
-def load_staticfiles(contents):
+def load_staticfiles(contents):  # TODO dynamic extends tags
     """######################################################################################
     # check for {% load staticfiles %} tag                                                  #
     # then inserts after either {% extends base.html %} (if it exists) or doctype           #
@@ -146,7 +146,7 @@ def url_conf(contents):  # TODO make this independent from staticfy
     process_py.process_py(url_list)
     return contents
 
-def default_blocks(contents):
+def default_blocks(contents):  # TODO segment into del_tag, mod_tag, insert_tag
     """######################################################################################
     #  designed to insert the default inherited blocks (head_block and body_content)        #
     #  declarations are verbose to avoid naming errors                                      #
@@ -191,7 +191,7 @@ def default_blocks(contents):
 
     return contents
 
-def remove_html_tags(contents):
+def remove_html_tags(contents):  # TODO will be replaced by del_tag
     """######################################################################################
     # this function simply seeks and eliminates html tags from inheriting pages             #
     # ###USAGE: this function is called in process() when in child page mode                #
@@ -226,6 +226,26 @@ def remove_relative_path(contents):
             new_contents = contents[:rel_path_loc] + contents[rel_path_end:]
             contents = new_contents
     return contents
+
+def find_tag(content, tag):
+    index = content.find('<'+tag)
+    end = content.find('>', tag) + 1
+    location = (index, end)
+    return location
+
+def del_tag(content, tag):
+    loc = find_tag(content, tag)
+    new_content = content[:loc[0]] + content[loc[1]:]
+    return new_content
+
+def mod_tag(content, tag, new_tag):
+    loc = find_tag(content, tag)
+    new_content = content[:loc[0]] + new_tag + content[loc[1]:]
+    return new_content
+
+def insert_tag(content, tag, index):
+    new_content = content[:index] + tag + content[index:]
+    return new_content
 
 ''' original version
 def process(a_file, mode):
