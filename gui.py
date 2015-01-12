@@ -7,7 +7,9 @@ import wx
 import facade
 import process_html
 import process_py
-
+import logging
+import log_manager
+import time
 
 class MyFrame(facade.main_window):
     def __init__(self, parent):
@@ -211,9 +213,18 @@ class MyFrame(facade.main_window):
 
     def close_program(self, event):               # File Menu : Exit button
         self.Close()
+        log = logging.getLogger('main')
+        log.info("....Closing App.")
 ########################################################################################################################
 
-app = wx.App()
-frame = MyFrame(None)
-frame.Show()
-app.MainLoop()
+if __name__ == "__main__":  # Log file references this file as "main"
+    t = time.strftime("%a-%b-%d-20%y")
+    log = log_manager.log_manager("logs/staticfy_log[%s].txt" % t)
+    log.log.info("Staticfy Django Integration Tool.")
+    log.log.info("Written by mark@afkovertime and mike@afkovertime.")
+    log.log.info("Log for %s." % time.asctime())
+    log.log.info("Starting App...")
+    app = wx.App()
+    frame = MyFrame(None)
+    frame.Show()
+    app.MainLoop()

@@ -6,20 +6,21 @@ LEVELS = { 'DEBUG': logging.DEBUG,
             'WARNING': logging.WARNING,
             'ERROR': logging.ERROR,
             'CRITICAL': logging.CRITICAL}
-            
+
+
 class log_manager:
 
     log = None
     handler = None
     formatter = None
-                    
+    block_level = 0
+
     def __init__(self, file_path, type="DEBUG"):
         self.log = logging.getLogger("main")
         self.log.setLevel(LEVELS[type])
         
-        
         self.handler = logging.FileHandler(file_path,"w")
-        self.formatter = logging.Formatter("[%(asctime)s] - %(name)s.%(levelname)s - [%(module)s.%(funcName)s():%(lineno)d] - %(message)s")
+        self.formatter = logging.Formatter("[%(name)s.%(levelname)s - [%(module)s.%(funcName)s():%(lineno)d] - %(message)s")
         
         self.handler.setFormatter(self.formatter)
         self.handler.setLevel(LEVELS[type])

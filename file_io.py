@@ -4,9 +4,11 @@ import log_manager
 import string
 from os import walk
 import os.path
+import logging
 
 
-log = log_manager.log_manager("logs/file_io_log.txt")
+
+
 
 
 def build_traceback(error_trace):
@@ -33,30 +35,31 @@ def get_contents(filename, lines=False, full_dir=True):
     :param full_dir: Passed on to other functions, does nothing here.
     :return: The (contents) of (filename).
     """
+    log = logging.getLogger('main')
     print "\n"+filename+"\n"
     filename = string.lstrip(filename, "u'")
     filename = string.rstrip(filename, "'")
-    log.log.info("Getting %s now..." % filename)
+    log.info("Getting %s now..." % filename)
     print "\n"+filename+"\n"
     try:
         if not lines:
             f = open(filename, 'r')
             contents = f.read()
-            log.log.info("    ...making backup...")
+            log.info("    ...making backup...")
             make_backup(contents, filename, lines=lines, full_dir=full_dir)  # Make a pristine backup.
-            log.log.info("    ...done.")
+            log.info("    ...done.")
             return contents
         else:
             f = open(filename, 'r')
             contents = f.readlines()
-            log.log.info("    ...making backup...")
+            log.info("    ...making backup...")
             make_backup(contents, filename, lines=lines, full_dir=full_dir)
-            log.log.info("    ...done.")
+            log.info("    ...done.")
             return contents
 
     except IOError as e:
-        log.log.error("[IO ERROR] %s %s" % (e.errno, e.strerror))
-        log.log.error("[TRACEBACK] %s" % build_traceback(traceback.format_exc()))
+        log.error("[IO ERROR] %s %s" % (e.errno, e.strerror))
+        log.error("[TRACEBACK] %s" % build_traceback(traceback.format_exc()))
         filename = input('Please enter a valid file, "skip" to skip this file or "quit" to exit!')  # prompt for file
 
         if filename == 'quit':
@@ -78,15 +81,16 @@ def make_backup(contents, filename, lines=False, full_dir=True):
     :return: Nothing.
     """
     # to get just the name from a full directory name
+    log = logging.getLogger('main')
     if full_dir:
         f = string.split(filename, '\\')
         copy_filename = "copyOf" + f[len(f)-1]
     else:
         copy_filename = "copyOf" + filename
     if make_new_file(contents, copy_filename, backup=True, lines=lines, full_dir=full_dir):
-        log.log.info("Made backup copy of " + filename + " named " + copy_filename)
+        log.info("Made backup copy of " + filename + " named " + copy_filename)
     else:
-        log.log.error("Backup of " + filename + " has failed.")
+        log.error("Backup of " + filename + " has failed.")
 
 
 
@@ -101,28 +105,29 @@ def make_new_file(contents, filename, backup=False, lines=False, full_dir=False)
     :param full_dir: Does nothing at the moment.
     :return True if successful:
     """
+    log = logging.getLogger('main')
     try:
         if not lines:
             f = open(filename, 'w')  # create/open the file in write mode
             f.write(contents)        # write/overwrite it
             f.close()                # save it
-            log.log.info("File saved: " + filename)
+            log.info("File saved: " + filename)
         else:
             f = open(filename, 'w')
             for line in contents:
                 f.write(line)
             f.close()
-            log.log.info("File saved: " + filename)
+            log.info("File saved: " + filename)
         return True
 
     except IOError as e:
-        log.log.error("[IO ERROR] %s %s" % (e.errno, e.strerror))
-        log.log.error("[TRACEBACK] %s" % build_traceback(traceback.format_exc()))
+        log.error("[IO ERROR] %s %s" % (e.errno, e.strerror))
+        log.error("[TRACEBACK] %s" % build_traceback(traceback.format_exc()))
         if backup:
             input('Back up failed, please manually back up and press any key to continue.')
         else:
             input('Writing to file ' + filename + 'failed, press any key to continue.')
-            log.log.error('Writing to file ' + filename + ' failed.')
+            log.error('Writing to file ' + filename + ' failed.')
         return False
 
 
@@ -131,6 +136,7 @@ def file_or_dir(path, ext=None):
     :param path: user entered path
     :return: (list)filename provided as path OR all files in dir provided as path
     """
+    log = logging.getLogger('main')
     f = []
     if os.path.isdir(path):
         for (dirpath, dirnames, filenames) in walk(path):  # dirpath == path, dirnames = folders inside path
@@ -145,3 +151,8 @@ def file_or_dir(path, ext=None):
         # this is actually a secondary check, it should already be done once in gui.py
         pass
     return f
+
+
+if __name__ == "__main__":
+    global log
+    log = log_manager.log_manager("logs/file_io_log.txt")
