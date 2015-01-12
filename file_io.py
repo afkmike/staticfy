@@ -24,7 +24,7 @@ def build_traceback(error_trace):
     return ns
 
 
-def get_contents(filename, lines=False, full_dir=False):
+def get_contents(filename, lines=False, full_dir=True):
     """
     Reads the contents of filename and returns either an array (lines=True) of (lines),
     or returns a string (lines=False). (full_dir) is used in later functions.
@@ -33,17 +33,23 @@ def get_contents(filename, lines=False, full_dir=False):
     :param full_dir: Passed on to other functions, does nothing here.
     :return: The (contents) of (filename).
     """
+    print "\n"+filename+"\n"
+    filename = string.lstrip(filename, "u'")
+    filename = string.rstrip(filename, "'")
     log.log.info("Getting %s now..." % filename)
+    print "\n"+filename+"\n"
     try:
         if not lines:
             f = open(filename, 'r')
             contents = f.read()
+            log.log.info("    ...making backup...")
             make_backup(contents, filename, lines=lines, full_dir=full_dir)  # Make a pristine backup.
             log.log.info("    ...done.")
             return contents
         else:
             f = open(filename, 'r')
             contents = f.readlines()
+            log.log.info("    ...making backup...")
             make_backup(contents, filename, lines=lines, full_dir=full_dir)
             log.log.info("    ...done.")
             return contents
@@ -61,7 +67,7 @@ def get_contents(filename, lines=False, full_dir=False):
             return get_contents(filename, full_dir)
 
 
-def make_backup(contents, filename, lines=False, full_dir=False):
+def make_backup(contents, filename, lines=False, full_dir=True):
     """
     Makes a back up of (contents), with the name (copyOf(filename))
     If the directory is full, strip out everything but the (filename) for (copy_filename)
@@ -120,7 +126,7 @@ def make_new_file(contents, filename, backup=False, lines=False, full_dir=False)
         return False
 
 
-def file_or_dir(path):
+def file_or_dir(path, ext=None):
     """
     :param path: user entered path
     :return: (list)filename provided as path OR all files in dir provided as path
@@ -130,7 +136,7 @@ def file_or_dir(path):
         for (dirpath, dirnames, filenames) in walk(path):  # dirpath == path, dirnames = folders inside path
             f.extend(filenames)
             print "file found in folder: ".join(map(str, filenames))  # this could be changed to a log entry
-            break
+            break  # <-- ???????????????
     elif os.path.isfile(path):
         f.append(path)
         print "single file path: ".join(map(str, path))  # this could be changed to a log entry

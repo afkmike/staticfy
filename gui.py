@@ -209,7 +209,7 @@ class MyFrame(facade.main_window):
         about = facade.about_dialog(None)
         about.Show()
 
-    def close_program( self, event ):               # File Menu : Exit button
+    def close_program(self, event):               # File Menu : Exit button
         self.Close()
 ########################################################################################################################
 

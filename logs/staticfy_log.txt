@@ -1,3 +1,6 @@
-[2015-01-11 21:35:32,943] - main.INFO - [file_io.get_contents():36] - Getting C:\afk\test\subfolder\test.htm now...
-[2015-01-11 21:35:32,943] - main.ERROR - [file_io.make_new_file():113] - [IO ERROR] 22 invalid mode ('w') or filename
-[2015-01-11 21:35:32,943] - main.ERROR - [file_io.make_new_file():114] - [TRACEBACK] Traceback (most recent call last):   File "c:\afk\staticfy\file_io.py", line 100, in make_new_file     f = open(filename, 'w')  # create/open the file in write mode IOError: [Errno 22] invalid mode ('w') or filename: u'copyOfC:\\afk\\test\\subfolder\\test.htm'  
+[2015-01-11 23:53:26,500] - main.INFO - [file_io.get_contents():39] - Getting C:\BottomLineWebApp\staticfy\test.html now...
+[2015-01-11 23:53:26,500] - main.INFO - [file_io.get_contents():45] -     ...making backup...
+[2015-01-11 23:53:26,500] - main.INFO - [file_io.make_new_file():109] - File saved: copyOftest.html
+[2015-01-11 23:53:26,502] - main.INFO - [file_io.make_backup():87] - Made backup copy of C:\BottomLineWebApp\staticfy\test.html named copyOftest.html
+[2015-01-11 23:53:26,502] - main.INFO - [file_io.get_contents():47] -     ...done.
+[2015-01-11 23:53:26,502] - main.INFO - [file_io.make_new_file():109] - File saved: C:\BottomLineWebApp\staticfy\test.html
