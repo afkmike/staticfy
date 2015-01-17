@@ -18,18 +18,25 @@ def extend_base(contents, template='base.html'):
     #           will apply only to non-template files                                       #
     ######################################################################################"""
     log = logging.getLogger('main')
-    EXTENDS_BASE_TAG = '{% extends \"' + template + '\" %}'
-    EXTENDS_BASE_INDEX = contents.find(EXTENDS_BASE_TAG)
+    EXTENDS_BASE_FRONT = '{% extends'
+    EXTENDS_BASE_BACK = ' \"' + template + '\" %}'
+    EXTENDS_BASE_INDEX = contents.find(EXTENDS_BASE_FRONT)
     if EXTENDS_BASE_INDEX == -1:
-        log.info("Extends base.html tag was inserted")
-        AFTER_DOCTYPE = contents.find(">")+1  # safe enchant to +3   o.0
-        new_contents = contents[:AFTER_DOCTYPE] + "\n" + EXTENDS_BASE_TAG + "\n" + contents[AFTER_DOCTYPE:]
+        DOCTYPE_LOC = find_tag(contents, '!DOCTYPE')
+        BEFORE_ANY_OTHER_DJANGO_TAGS = contents.find("{%")
+        if DOCTYPE_LOC[1] < BEFORE_ANY_OTHER_DJANGO_TAGS or BEFORE_ANY_OTHER_DJANGO_TAGS == -1:
+            # we should always get here because doctype should be first line
+            new_contents = insert_tag(contents, '\n'+EXTENDS_BASE_FRONT+EXTENDS_BASE_BACK+'\n', DOCTYPE_LOC[1])
+        else:
+            # just in case doctype is omitted or placed after django tags, extends will still be the first django tag
+            new_contents = insert_tag(contents, '\n'+EXTENDS_BASE_FRONT+EXTENDS_BASE_BACK+'\n', BEFORE_ANY_OTHER_DJANGO_TAGS)
+        log.info(EXTENDS_BASE_FRONT + EXTENDS_BASE_BACK + " inserted")
         return new_contents
     else:
         log.info("Extends tag found prior to insert. Process aborted.")
         return contents
 
-def load_staticfiles(contents):  # TODO dynamic extends tags
+def load_staticfiles(contents):
     """######################################################################################
     # check for {% load staticfiles %} tag                                                  #
     # then inserts after either {% extends base.html %} (if it exists) or doctype           #
@@ -40,56 +47,49 @@ def load_staticfiles(contents):  # TODO dynamic extends tags
     LOAD_SF_TAG = "{% load staticfiles %}"
     LOAD_SF_INDEX = contents.find(LOAD_SF_TAG)
     if LOAD_SF_INDEX != -1:
+        log.info("Load staticfiles tag found prior to insert. Process aborted.")
         return contents
     else:
-        EXTENDS_BASE_TAG = "{% extends \"base.html\" %}"
-        EXTENDS_BASE_INDEX = contents.find(EXTENDS_BASE_TAG)
+        EXTENDS_BASE_INDEX = contents.find("{% extends")
         if EXTENDS_BASE_INDEX > 0:
-            log.info("Load staticfiles tag inserted after extends base.html tag")
-            EXTENDS_BASE_INDEX += len(EXTENDS_BASE_TAG)+1
-            new_contents = contents[:EXTENDS_BASE_INDEX] + "\n" + LOAD_SF_TAG + "\n" + contents[EXTENDS_BASE_INDEX:]
+            AFTER_EXTENDS = contents.find("%}", EXTENDS_BASE_INDEX)+len("%}")
+            new_contents = insert_tag(contents, "\n" + LOAD_SF_TAG + "\n", AFTER_EXTENDS)
+            log.info("Load staticfiles tag inserted after {%extends ... %} tag")
         else:
+            DOCTYPE_LOC = find_tag(contents, '!DOCTYPE')
+            new_contents = insert_tag(contents, "\n" + LOAD_SF_TAG + "\n", DOCTYPE_LOC[1])
             log.info("Load staticfiles tag inserted after DOCTYPE tag")
-            AFTER_DOCTYPE = contents.find(">")+1
-            new_contents = contents[:AFTER_DOCTYPE] + "\n" + LOAD_SF_TAG + "\n" + contents[AFTER_DOCTYPE:]
         return new_contents
 
-def staticfy_resource(contents, res_type):  # TODO ignore <a>
-    """######################################################################################
-    #  designed to link all resources to the staticfiles dir                                #
-    #  calls load_staticfiles() to ensure the files are loaded before trying to link        #
-    #  generalized to require you pass the resource type (ie. src=, href= (REMEMBER = !))   #
-    # ###USAGE: Don't forget the = or it won't work right!                                  #
-    #           Safe to call on template and non-template files                             #
-    ######################################################################################"""
+def staticfy_resource(contents, tags_affected=['link', 'script', 'img']):  # TODO CHECK FOR ALREADY BEEN DONE
     log = logging.getLogger('main')
     contents = load_staticfiles(contents)
 
-    RES_INDEX = 0
+    ATTRIBUTES = ['href=', 'src=']
     STATIC_TAG_FRONT = '\"{% static '
     STATIC_TAG_BACK = ' %}\"'
-    STATIC_FRONT_LEN = len(STATIC_TAG_FRONT)+1
-    STATIC_BACK_LEN = len(STATIC_TAG_BACK)+1
-    OFFSET = len(res_type)
-    while RES_INDEX != -1:
-        RES_INDEX = contents.find(res_type, RES_INDEX)
-        if RES_INDEX != -1:
-            RES_INDEX += OFFSET
-        else:
-            break
-        ALREADY_LINKED = contents.find(STATIC_TAG_FRONT, RES_INDEX, (RES_INDEX+STATIC_FRONT_LEN))
-        if ALREADY_LINKED == -1:
-            log.info("Resource of type: " + res_type + " FOUND! STATICFYING!")
-            new_contents = contents[:RES_INDEX] + STATIC_TAG_FRONT + contents[RES_INDEX:]
-            contents = new_contents
-            quotes = contents.find("\"", (RES_INDEX+STATIC_FRONT_LEN))
-            quotes += 1
-            new_contents = contents[:quotes] + STATIC_TAG_BACK + contents[quotes:]
-            contents = new_contents
-        else:
-            break
+    for tag in tags_affected:
+        index = 0
+        index_list = []
+        while index != -1:
+            LOC = find_tag(contents, tag, index+1)
+            index_list.append(LOC)
+            index = LOC[0]
+        for each_tag in index_list:
+            if each_tag[0] == -1:
+                break
+            else:
+                for each_attr in ATTRIBUTES:
+                    attr_index = contents.find(each_attr, each_tag[0], each_tag[1])
+                    if attr_index != -1:
+                        attr_index += len(each_attr)
+                        new_contents = insert_tag(contents, STATIC_TAG_FRONT, attr_index)
+                        contents = new_contents
+                        quotes = contents.find("\"", (attr_index+len(STATIC_TAG_FRONT)+1))
+                        new_contents = insert_tag(contents, STATIC_TAG_BACK, quotes+1)
+                        contents = new_contents
+                        log.info("Static reference added to " + each_attr + " within " + tag + " tag.")
     contents = staticfy_preload(contents)
-    log.info("ALL RESOURCES ARE STATICFIED!")
     return contents
 
 def staticfy_preload(contents):
@@ -108,6 +108,8 @@ def staticfy_preload(contents):
     back_index = 0
     while front_index != -1:
         front_index = contents.find(FRONT_INDICATOR, back_index)
+        if front_index == -1:
+            break
         back_index = contents.find(BACK_INDICATOR, front_index)
         file_list = contents[(front_index+len(FRONT_INDICATOR)):back_index]
         thing = file_list.split(',')
@@ -120,12 +122,13 @@ def staticfy_preload(contents):
         log.info("A script preload list has been STATICFIED!")
     return contents
 
-def url_conf(contents):  # TODO make this independent from staticfy
+def url_conf(contents):  # TODO accommodate namespacing and variables, CHECK FOR ALREADY BEEN DONE
     """######################################################################################
     # designed to match all hyperlinks to their django url configuration                    #
     # ###USAGE: this function can be "independently" called by process() or any flow control#
     ######################################################################################"""
     log = logging.getLogger('main')
+    contents = staticfy_resource(contents, 'a')  # this should be working, but isn't
     link_index = 0
     bracket_index = 0
     ANCHOR_TAG = '<a'
@@ -148,7 +151,7 @@ def url_conf(contents):  # TODO make this independent from staticfy
             NEW_LINK = 'url \"' + URL + '\" %'
             new_contents = contents[:(ATTRIBUTE_INDEX+OFFSET_1)] + NEW_LINK + contents[bracket_index:]
             contents = new_contents
-    process_py.process_py(url_list)
+    #process_py.process_py(url_list)
     return contents
 
 def default_blocks(contents):  # TODO segment into del_tag, mod_tag, insert_tag
@@ -235,9 +238,9 @@ def remove_relative_path(contents):
             contents = new_contents
     return contents
 
-def find_tag(content, tag):
-    index = content.find('<'+tag)
-    end = content.find('>', tag) + 1
+def find_tag(content, tag, start_index=0):
+    index = content.find('<'+tag, start_index)
+    end = content.find('>', index) + 1
     location = (index, end)
     return location
 
@@ -255,29 +258,6 @@ def insert_tag(content, tag, index):
     new_content = content[:index] + tag + content[index:]
     return new_content
 
-''' original version
-def process(a_file, mode):
-    """######################################################################################
-    # single call helper function encapsulates flow control by file type                    #
-    # ###USAGE: this function is called from __main__ to automate typical processing        #
-    ######################################################################################"""
-    # TODO implement base template configurations!!
-    # (MODE == PAGE_TYPE)
-    # if mode = base
-
-    # if mode = content
-    # Standard Child template process:
-    if mode == 1:
-        contents = file_io.get_contents(a_file)
-        contents = default_blocks(contents)
-        contents = remove_html_tags(contents)
-        contents = remove_relative_path(contents)
-        contents = staticfy_resource(contents, "src=")
-        contents = staticfy_resource(contents, "href=")
-        contents = url_conf(contents)
-        file_io.make_new_file(contents, a_file)
-    return
-'''
 def process(funct_dic):
     ''' funct_dic key
     #  'path': 0,                 # file path to modify or 0(None) - expect: u'c:\\dir\file'  getting: C
@@ -288,9 +268,11 @@ def process(funct_dic):
     #  'disable_rel_path': 0,     # t/f
     #  'default_blocks': 0        # t/f
     '''
+    log = logging.getLogger('main')
     fileslist = file_io.file_or_dir(funct_dic['path'])
     for a_file in fileslist:
         contents = file_io.get_contents(a_file)
+        log.info("processing an html file: " + a_file)
         if funct_dic['extends']:
             contents = extend_base(contents, funct_dic['extends'])
         if funct_dic['default_blocks']:

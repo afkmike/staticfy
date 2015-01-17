@@ -7,6 +7,7 @@ import wx
 import facade
 import process_html
 import process_py
+import file_io
 import logging
 import log_manager
 import time
@@ -195,8 +196,9 @@ class MyFrame(facade.main_window):
             # TODO add some input to the dict items you make
             pass
 
-        diff = facade.diff_view(None)
-        diff.files_combo.Append(filenames)
+        diff = Diff(None)
+        for each in filenames:
+            diff.files_combo.Append(each)
         diff.Show()
 
     def clear_log_contents(self, event):
@@ -216,6 +218,18 @@ class MyFrame(facade.main_window):
         log = logging.getLogger('main')
         log.info("....Closing App.")
 ########################################################################################################################
+
+class Diff(facade.diff_view):
+    def __init__(self, parent):
+        super(Diff, self).__init__(parent)
+
+    def show_selected_file(self, event):
+        path = self.files_combo.GetValue()
+        # old_contents = self.files_combo.GetValue()
+        # then trim the filename off the end and add staticfy_root\copyOf
+        contents = file_io.get_contents(path)
+        self.mod_file.SetValue(contents)
+        pass
 
 if __name__ == "__main__":  # Log file references this file as "main"
     t = time.strftime("%a-%b-%d-20%y")

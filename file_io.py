@@ -145,7 +145,7 @@ def file_or_dir(path, ext=None):
             break  # <-- ???????????????
     elif os.path.isfile(path):
         f.append(path)
-        print "single file path: ".join(map(str, path))  # this could be changed to a log entry
+        print "single file path: " + path  # this could be changed to a log entry
     else:
         # TODO show 'you didn't enter a file to modify, moron' dialog and kill the process
         # this is actually a secondary check, it should already be done once in gui.py
