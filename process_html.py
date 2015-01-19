@@ -9,6 +9,7 @@ import log_manager
 import file_io
 import process_py
 import logging
+import re
 
 
 def extend_base(contents, template='base.html'):
@@ -61,7 +62,7 @@ def load_staticfiles(contents):
             log.info("Load staticfiles tag inserted after DOCTYPE tag")
         return new_contents
 
-def staticfy_resource(contents, tags_affected=['link', 'script', 'img']):  # TODO CHECK FOR ALREADY BEEN DONE
+def staticfy_resource(contents, tags_affected=['link', 'script', 'img']):
     log = logging.getLogger('main')
     contents = load_staticfiles(contents)
 
@@ -69,12 +70,7 @@ def staticfy_resource(contents, tags_affected=['link', 'script', 'img']):  # TOD
     STATIC_TAG_FRONT = '\"{% static '
     STATIC_TAG_BACK = ' %}\"'
     for tag in tags_affected:
-        index = 0
-        index_list = []
-        while index != -1:
-            LOC = find_tag(contents, tag, index+1)
-            index_list.append(LOC)
-            index = LOC[0]
+        index_list = find_all_tags(contents, tag)
         for each_tag in index_list:
             if each_tag[0] == -1:
                 break
@@ -83,12 +79,11 @@ def staticfy_resource(contents, tags_affected=['link', 'script', 'img']):  # TOD
                     attr_index = contents.find(each_attr, each_tag[0], each_tag[1])
                     if attr_index != -1:
                         attr_index += len(each_attr)
-                        new_contents = insert_tag(contents, STATIC_TAG_FRONT, attr_index)
-                        contents = new_contents
-                        quotes = contents.find("\"", (attr_index+len(STATIC_TAG_FRONT)+1))
-                        new_contents = insert_tag(contents, STATIC_TAG_BACK, quotes+1)
-                        contents = new_contents
-                        log.info("Static reference added to " + each_attr + " within " + tag + " tag.")
+                        if contents.find('{%', attr_index, each_tag[1]) == -1:
+                            contents = insert_tag(contents, STATIC_TAG_FRONT, attr_index)
+                            quotes = contents.find("\"", (attr_index+len(STATIC_TAG_FRONT)+1))
+                            contents = insert_tag(contents, STATIC_TAG_BACK, quotes+1)
+                            log.info("Static reference added to " + each_attr + " within " + tag + " tag.")
     contents = staticfy_preload(contents)
     return contents
 
@@ -122,36 +117,34 @@ def staticfy_preload(contents):
         log.info("A script preload list has been STATICFIED!")
     return contents
 
-def url_conf(contents):  # TODO accommodate namespacing and variables, CHECK FOR ALREADY BEEN DONE
+def url_conf(contents, appname=""):
     """######################################################################################
     # designed to match all hyperlinks to their django url configuration                    #
     # ###USAGE: this function can be "independently" called by process() or any flow control#
     ######################################################################################"""
     log = logging.getLogger('main')
-    contents = staticfy_resource(contents, 'a')  # this should be working, but isn't
-    link_index = 0
-    bracket_index = 0
-    ANCHOR_TAG = '<a'
-    ATTRIBUTE = 'href='
-    OFFSET_1 = len('href="{% ')             # pos to add 'url'
-    OFFSET_2 = len('href="{% static "')     # pos to put trimmed url
-    url_list = []
-    while link_index != -1:
-        link_index = contents.find(ANCHOR_TAG, bracket_index)
-        if link_index == -1:
-            break
-        else:
-            ATTRIBUTE_INDEX = contents.find(ATTRIBUTE, link_index)
-            DOT_INDEX = contents.find('.', (ATTRIBUTE_INDEX + OFFSET_2))
-            bracket_index = contents.find('}', DOT_INDEX)
-            URL_FRONT = ATTRIBUTE_INDEX + OFFSET_2
-            URL = contents[URL_FRONT: DOT_INDEX]
-            url_list.append(URL)
-            log.info("Url revised : " + URL)
-            NEW_LINK = 'url \"' + URL + '\" %'
-            new_contents = contents[:(ATTRIBUTE_INDEX+OFFSET_1)] + NEW_LINK + contents[bracket_index:]
-            contents = new_contents
-    #process_py.process_py(url_list)
+    url_reg_ex = re.compile(r"((https?):((//)|(\\\\))+[\w\d:#@%/;$()~_?\+-=\\\.&]*)", re.MULTILINE|re.UNICODE)
+
+    URL_FRONT = '{% url \"'
+    URL_BACK = ' %}\"'
+    index_list = find_all_tags(contents, 'a')
+    for each_tag in index_list:
+        if each_tag[0] != -1:
+            if contents.find(URL_BACK, each_tag[0], each_tag[1]) == -1:
+                attr_index = contents.find('href=', each_tag[0], each_tag[1])
+                if attr_index != -1:
+                    attr_index += len('href="')
+                    print url_reg_ex.findall(contents)
+                    if appname == "":
+                        contents = insert_tag(contents, URL_FRONT, attr_index)
+                    else:
+                        contents = insert_tag(contents, (URL_FRONT+appname+":"), attr_index)
+                    attr_index += len(URL_FRONT) + 1
+                    quotes = contents.find('\"', attr_index)
+                    contents = insert_tag(contents, URL_BACK, quotes+1)
+                    dot_index = contents.find('.', attr_index, quotes)
+                    contents = contents[:dot_index] + contents[quotes:]
+                    log.info("Url reference added to href= attribute within <a> tag.")
     return contents
 
 def default_blocks(contents):  # TODO segment into del_tag, mod_tag, insert_tag
@@ -243,6 +236,15 @@ def find_tag(content, tag, start_index=0):
     end = content.find('>', index) + 1
     location = (index, end)
     return location
+
+def find_all_tags(contents, tag):
+    index = 0
+    index_list = []
+    while index != -1:
+        LOC = find_tag(contents, tag, index+1)
+        index_list.append(LOC)
+        index = LOC[0]
+    return index_list
 
 def del_tag(content, tag):
     loc = find_tag(content, tag)
