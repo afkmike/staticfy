@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 __author__ = 'mike@afkconcepts.com'
 """
 process_html is a django integration script for new html files
@@ -123,7 +124,7 @@ def url_conf(contents, appname=""):
     # ###USAGE: this function can be "independently" called by process() or any flow control#
     ######################################################################################"""
     log = logging.getLogger('main')
-    url_reg_ex = re.compile(r"((https?):((//)|(\\\\))+[\w\d:#@%/;$()~_?\+-=\\\.&]*)", re.MULTILINE|re.UNICODE)
+    url_reg_ex = re.compile(r"(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'.,<>?«»“”‘’]))")
 
     URL_FRONT = '{% url \"'
     URL_BACK = ' %}\"'
@@ -134,17 +135,17 @@ def url_conf(contents, appname=""):
                 attr_index = contents.find('href=', each_tag[0], each_tag[1])
                 if attr_index != -1:
                     attr_index += len('href="')
-                    print url_reg_ex.findall(contents)
-                    if appname == "":
-                        contents = insert_tag(contents, URL_FRONT, attr_index)
-                    else:
-                        contents = insert_tag(contents, (URL_FRONT+appname+":"), attr_index)
-                    attr_index += len(URL_FRONT) + 1
-                    quotes = contents.find('\"', attr_index)
-                    contents = insert_tag(contents, URL_BACK, quotes+1)
-                    dot_index = contents.find('.', attr_index, quotes)
-                    contents = contents[:dot_index] + contents[quotes:]
-                    log.info("Url reference added to href= attribute within <a> tag.")
+                    if not url_reg_ex.findall(contents[each_tag[0]:each_tag[1]]):
+                        if appname == "":
+                            contents = insert_tag(contents, URL_FRONT, attr_index)
+                        else:
+                            contents = insert_tag(contents, (URL_FRONT+appname+":"), attr_index)
+                        attr_index += len(URL_FRONT) + 1
+                        quotes = contents.find('\"', attr_index)
+                        contents = insert_tag(contents, URL_BACK, quotes+1)
+                        dot_index = contents.find('.', attr_index, quotes)
+                        contents = contents[:dot_index] + contents[quotes:]
+                        log.info("Url reference added to href= attribute within <a> tag.")
     return contents
 
 def default_blocks(contents):  # TODO segment into del_tag, mod_tag, insert_tag
